@@ -199,7 +199,7 @@ try:
 
     #correct any possible added characters
     if(charString):
-        if(charString[len(charString)-1]== " "): charString = charString[:len(charString)-1]
+        if( charString[len(charString)-1]== " " or charString[len(charString)-1]== "," ): charString = charString[:len(charString)-1]
         print(charString)
         
     print("\n")
