@@ -64,7 +64,27 @@ def main():
         command = "-h" in commands  or   "--help" in commands
         if( commands[0] == "-h" or  commands[0] == "-help"):
             print ( "-h --help" )
+            print(
+'''\nCommands:\n
+
+-h  | --help        # displays available commands.
+-c  | --count       # returns n specified byte_words (i.e. 01 02 03 04), 4 in this example.
+-s  | --separate    # returns a separated array of n byte_words when a valid, even, stirng of bytes provided (i.e. 01020304 -> 01 02 03 04).
+-j  | --join        # joins a space-separated array of given byte_words. (i.e. 01 02 03 04 -> 01020304).
+-r  | --repeat      # returns an array of n-lenght of repeated byte_words (i.e AA AA AA AA).
+-cl | --clean       # removes comas and prefixes in a string of byte_words (i.e 0x01, 0x02, 0x03 -> 01 02 03).
+
+Flags:\n
+Note: flags are intended to be added as support alongside the commands
+
+-p  | --prefix      # 0x prefix flag (i.e. 01,02,03 -> 0x01,0x02,0x03)
+-cs | --comma       # comma separated flag
+-ns | --no-sep      # no space separated flag
+-sp | --sart-point  # starting point flag [Starts at a given number where (starting_point + n < 0xFF ). n = # of byte_words  ]
+
+
             
+                ''')
             
 
         #more than 3 argumens, could either be an argument with a flag or an argument with a space separated string of n bytes
@@ -196,7 +216,7 @@ def main():
 
         #--------------------------------------------------------------------------------------------------------------------------#
 
-        command = "-cln"    in commands or "--clean"            in commands
+        command = "-cl"    in commands or "--clean"            in commands
         prefix  = "-p"      in commands or "--prefix"           in commands #checks for prefix flag
         ns      = "-ns"     in commands or "--no-sep"           in commands #checks for no space separation
 
