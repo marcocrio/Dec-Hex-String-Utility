@@ -93,7 +93,7 @@ def main():
             starting_point = 0
             if(sp):
                 
-                starting_point  = byteStringToHex(arguments[1])  if(bool(re.match('^[ABCDEFabcdef]+$', arguments[1]))) else arguments[1]
+                starting_point  = byteStringToHex(arguments[1])  if(bool(re.match('^[ABCDEFabcdef]+$', arguments[1]))) else int(arguments[1])
                 number_of_bytes = int(arguments[0]) -1
                 shifted_value   =  starting_point + number_of_bytes
 
