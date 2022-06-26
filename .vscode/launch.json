@@ -57,6 +57,22 @@
                 "32"
             ]
             
+        },
+        
+        {
+            "name": "Count with sp",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "-c",
+                "2",
+
+                "fe",
+            ]
+            
         }, 
                {
             "name": "Comma Separated Count with prefix",
