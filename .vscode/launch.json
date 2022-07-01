@@ -219,5 +219,20 @@
 
             ]
         }
+         ,
+        {
+            "name": "Upper Case",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "-upp",
+                "hola",
+                "capitan",
+
+            ]
+        }
     ]
 }
