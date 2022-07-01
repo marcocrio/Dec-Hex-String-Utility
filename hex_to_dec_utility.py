@@ -42,13 +42,21 @@ def main():
 
         #allowed_chars = set('32')
 
+        uppercase = (argList[0]== '-upp' or argList[0]=='-uppercase')
+
         for i in argList:
 
             if( i[:1] == "-"): 
                 commands.append(i)
             else:
-                if not(bool(re.match('^[012345678ABCDEFabcdef,xX]+$', i))): raise ValueError("Your '" + str(i) + "' argument is incorrectly formatted")
-                arguments.append(i)
+                if(not uppercase):
+                    if not(bool(re.match('^[012345678ABCDEFabcdef,xX]+$', i))): raise ValueError("Your '" + str(i) + "' argument is incorrectly formatted")
+                    arguments.append(i)
+                else:
+                    arguments.append(i)
+
+
+
 
 
         print("Command:")        
@@ -227,6 +235,19 @@ Note: flags are intended to be added as support alongside the commands
                 x = x.replace(",","")
                 x = x.replace("0x","") if ns else x.replace("0x"," ")
                 charString += x
+
+
+        #--------------------------------------------------------------------------------------------------------------------------#
+
+
+        command = "-upp" in commands     or      "--uppercase" in commands
+
+
+        if(command):
+            print ( "-upp --uppercase:\n" )
+
+            for x in arguments:
+                charString += x.upper() + " "
 
 
         #--------------------------------------------------------------------------------------------------------------------------#
