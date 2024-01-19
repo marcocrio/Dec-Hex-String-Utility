@@ -36,7 +36,9 @@ Commands:
 
 -h  | --help        # displays available commands.
 -c  | --count       # returns n specified byte_words (i.e. 01 02 03 04), 4 in this example.
--s  | --separate    # returns a separated array of n byte_words when a valid, even, string of bytes provided (i.e. 01020304 -> 01 02 03 04).
+-s  | --separate    # separates a string into byte words.
+                            # Use -p for adding '0x' prefix and -cs for comma-separated strings.
+                            # Example: -s -p -cs "0x01,0x02,0x03"
 -j  | --join        # joins a space-separated array of given byte_words. (i.e. 01 02 03 04 -> 01020304).
 -r  | --repeat      # returns an array of n-length of repeated byte_words (i.e AA AA AA AA).
 -cl | --clean       # removes commas and prefixes in a string of byte_words (i.e 0x01, 0x02, 0x03 -> 01 02 03).
@@ -51,8 +53,8 @@ Note: flags are intended to be added as support alongside the commands
 -cs  | --comma       # comma separated flag
 -ns  | --no-sep      # no space separated flag
 -sp  | --start-point # starting point flag [Starts at a given number where (starting_point + n < 0xFF ). n = # of byte_words  ]
-                     # -sp example: -c 5 -sp 5 --> 05 06 07 08 09  
-                     # where the -sp argument is an integer so if starting point is to be 0A the -sp value should be 10
+                            # -sp example: -c 5 -sp 5 --> 05 06 07 08 09  
+                            # where the -sp argument is an integer so if starting point is to be 0A the -sp value should be 10
                      
 '''
     print(help_text)
@@ -134,39 +136,40 @@ def handle_count_command(commands, arguments):
 def handle_separate_command(commands, arguments):
     prefix = "-p" in commands or "--prefix" in commands
     cs = "-cs" in commands or "--comma" in commands
-    ns = "-ns" in commands or "--no-sep" in commands
 
     if not arguments:
-        print("No string provided for separation.\n\n")
+        print("No string provided for separation.")
         return
 
     hex_string = arguments[0]
-    separated_string = ""
 
     if ',' in hex_string:
-        # Process comma-separated string
         hex_values = hex_string.split(',')
+        if prefix:
+            hex_values = ['0x' + val for val in hex_values]  # Add '0x' prefix
+
+    elif '0x' in hex_string.lower() or '0X' in hex_string:
+        # If string already contains prefixed byte words
+        hex_values = hex_string.split('0x')[1:]  # Split and ignore empty first element
+        hex_values = ['0x' + val for val in hex_values]  # Prepend '0x' to each value
+        
     else:
-        # Process continuous hex string
+        # Split continuous string into byte words
         hex_values = [hex_string[i:i+2] for i in range(0, len(hex_string), 2)]
+        if prefix:
+            hex_values = ['0x' + val for val in hex_values]  # Add '0x' prefix
 
-    for i, value in enumerate(hex_values):
-        value = value.strip()
+    # Determine separator based on -cs flag and current presence of commas
+    if cs and not any(',' in val for val in hex_values):
+        separator = ', '
+    else:
+        separator = ' '
 
-        # Prepend prefix if required
-        if prefix and not value.lower().startswith("0x"):
-            separated_string += "0x"
+    separated_string = separator.join(hex_values)
 
-        separated_string += value
+    print(separated_string)
 
-        # Add comma or space after each value
-        if i < len(hex_values) - 1:
-            if cs:
-                separated_string += ","
-            if not ns:
-                separated_string += " "
 
-    print(separated_string.strip())
 
     print('\n\n')
 
@@ -275,18 +278,10 @@ def main():
         
 
     elif "-s" in commands or "--separate" in commands:
-        # if arguments:
-        #     argument = arguments[0]
-        #     # Apply formatting only if the string contains commas and no '0x' or '0X'
-        #     if ',' in argument and all(prefix not in argument for prefix in ['0x', '0X']):
-        #         argument = format_hex_string(argument)
-        #     handle_separate_command(commands, [argument])
-        # else:
-        #     print("No string provided for separation.\n\n")
-        if len(arguments) != 1 or any(arg.startswith('0x') for arg in arguments):
-            print("Please encapsulate the entire hex string in quotes. For example: \"0x00,0x01,0x02,0x03\"\n\n")
-        else:
-            handle_separate_command(commands, arguments)
+        print("\nNote: This command requires to encapsulate your string in quotations marks\n")
+        handle_separate_command(commands, arguments)
+        
+    
 
     elif "-j" in commands or "--join" in commands:
         handle_join_command(commands, arguments)
