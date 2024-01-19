@@ -100,39 +100,6 @@ def handle_count_command(commands, arguments):
     print('\n\n')
 
 
-
-# def handle_separate_command(commands, arguments):
-#     if not arguments:
-#         raise ValueError("No string provided for separation.")
-
-#     hex_string = arguments[0]
-#     charString = ""
-
-#     # Check if the string contains '0x' prefix
-#     if '0x' in hex_string or '0X' in hex_string:
-#         segments = hex_string.split('0x')[1:]  # Skip the first empty segment
-#         for segment in segments:
-#             if len(segment) >= 2:
-#                 charString += "0x" + segment[:2]
-#                 if len(segment) > 2:
-#                     charString += " 0x" + segment[2:]
-#                 charString += " "
-#             else:
-#                 charString += "0x" + segment + " "
-#     elif ',' in hex_string:
-#         # Process comma-separated string
-#         hex_values = hex_string.split(',')
-#         for val in hex_values:
-#             charString += val if len(val) == 2 else '0' + val
-#             charString += " "
-#     else:
-#         # Process continuous hex string without separators
-#         for i in range(0, len(hex_string), 2):
-#             charString += hex_string[i:i+2] + " "
-
-#     print(charString.strip())
-#     print('\n\n')
-
 def handle_separate_command(commands, arguments):
     prefix = "-p" in commands or "--prefix" in commands
     cs = "-cs" in commands or "--comma" in commands
@@ -236,20 +203,85 @@ def handle_repeat_command(commands, arguments):
     print(repeated_string)
     print('\n\n')
 
+# def handle_clean_command(commands, arguments):
+#     ns = "-ns" in commands or "--no-sep" in commands
+#     prefix = "-p" in commands or "--prefix" in commands
+#     cs = "-cs" in commands or "--comma" in commands
+
+#     if not arguments:
+#         print("No string provided for cleaning.\n\n")
+#         return
+
+#     hex_string = arguments[0]
+
+#     # Remove '0x' or '0X' prefixes if the -p flag is not set
+#     if not prefix: 
+#         hex_string = hex_string.replace('0x', '').replace('0X', '')
+    
+#     # Insert space after every second character following "0x" or "0X"
+#     if prefix:
+#         hex_string = re.sub(r'(0x[0-9A-Fa-f]{2}|0X[0-9A-Fa-f]{2})', r'\1 ', hex_string)
+#         hex_string = hex_string.strip()
+
+
+#      # Remove commas if the -cs flag is not set, or add spaces if -ns is not set
+#     if not cs:
+#         if ns:
+#             hex_string = hex_string.replace(',', '')
+#         else:
+#             if not prefix:
+#                 hex_string = hex_string.replace(',', ' ')
+#             else:
+#                 hex_string = hex_string.replace(',', '')
+
+#     else:
+#         if ',' not in hex_string:
+#             # Match two hex characters or '0x' followed by two hex characters
+#             hex_string = re.sub(r'(0x[0-9A-Fa-f]{2}|[0-9A-Fa-f]{2})', r'\1, ', hex_string)[:-2]  # Remove trailing comma
+
+
+
+
+
+    
+#     print(hex_string)
+#     print('\n\n')
+
 def handle_clean_command(commands, arguments):
     if not arguments:
-        print("No string provided for cleaning.")
+        print("No string provided for cleaning.\n\n")
         return
 
-    # Combine the arguments into a single string
-    combined_args = " ".join(arguments)
+    prefix = "-p" in commands or "--prefix" in commands
+    cs = "-cs" in commands or "--comma" in commands
+    ns = "-ns" in commands or "--no-sep" in commands
+    hex_string = arguments[0]
 
-    # Remove commas, '0x', and '0X' prefixes
-    cleaned_string = combined_args.replace(",", "").replace("0x", "").replace("0X", "")
+    # Remove '0x' or '0X' prefixes, spaces, and commas
+    cleaned_string = hex_string.replace('0x', '').replace('0X', '').replace(',', '').replace(' ', '')
+
+    # Insert space after every two characters (byte word)
+    cleaned_string = ' '.join(cleaned_string[i:i+2] for i in range(0, len(cleaned_string), 2))
+
+    if prefix:
+        # Add '0x' prefix to each byte word
+        cleaned_string = ' '.join('0x' + byte_word for byte_word in cleaned_string.split())
+
+    if cs:
+        # Add a comma after each byte word, except the last one
+        byte_words = cleaned_string.split()
+        cleaned_string = ', '.join(byte_words)
+
+    if ns:
+        # Remove all spaces if -ns flag is set
+        cleaned_string = cleaned_string.replace(' ', '')
 
     print(cleaned_string)
-
     print('\n\n')
+
+
+
+
 
 def handle_uppercase_command(commands, arguments):
     # Implement uppercase functionality
@@ -291,6 +323,8 @@ def main():
     elif "-r" in commands or "--repeat" in commands:
         handle_repeat_command(commands, arguments)
     elif "-cl" in commands or "--clean" in commands:
+        print("\nNote: This command requires to encapsulate your string in quotations marks: \"0x00,0x01,0x02\"... \n")
+
         handle_clean_command(commands, arguments)
 
 
