@@ -1,295 +1,305 @@
 #!/usr/bin/python
 
-from ast import arg
-from distutils.log import error
 import sys
-
 import re
 
-
-print ('\nNumber of arguments:', len(sys.argv)-1, 'arguments.')
-print ('Argument List:', str(sys.argv[-(len(sys.argv)-1):]))
-print ('\n')
-
-
 def byteStringToHex(hexString) -> int:
-    CaphexLetters   = { "A": 10, "B": 11, "C": 12,"D": 13,"E": 14,"F": 15 }
-    hexLetters      = { "a": 10, "b": 11, "c": 12,"d": 13,"e": 14,"f": 15 }
-
+    hexLetters = { 
+        "A": 10, "B": 11, "C": 12, "D": 13, "E": 14, "F": 15,
+        "a": 10, "b": 11, "c": 12, "d": 13, "e": 14, "f": 15 
+    }
     decimal = 0
-    shiftCnt = len(hexString) - 1 #number of times a value is going to be shifted left
+    shiftCnt = len(hexString) - 1
     for x in hexString:
-        decVal = CaphexLetters[x] if x.isupper() else hexLetters[x]
-        decimal += (decVal << (shiftCnt*4) )
-        shiftCnt -= shiftCnt
-
-
-    # body of the function
+        decVal = int(x, 16) if x.isdigit() else hexLetters[x]
+        decimal += (decVal << (shiftCnt * 4))
+        shiftCnt -= 1
     return decimal
 
+def format_hex_string(hex_string):
+    # Check if the string contains '0x' or '0X'. If it does, return it as is.
+    if '0x' in hex_string or '0X' in hex_string:
+        return hex_string
+
+    # Split the string by commas
+    hex_values = hex_string.split(',')
+
+    # Prepend '0' if the hex value is a single digit and rejoin the string
+    formatted_hex_values = [value if len(value) == 2 else '0' + value for value in hex_values]
+
+    return ','.join(formatted_hex_values)
 
 
-def main():
-    try:
-
-        #intialization
-        argLen          = len(sys.argv)-1
-        argList         = sys.argv[-(len(sys.argv)-1):]
-
-        commands        = []
-        arguments   = []
-        charString      = ""
-
-        #allowed_chars = set('32')
-
-        uppercase = (argList[0]== '-upp' or argList[0]=='-uppercase')
-
-        for i in argList:
-
-            if( i[:1] == "-"): 
-                commands.append(i)
-            else:
-                if(not uppercase):
-                    if not(bool(re.match('^[012345678ABCDEFabcdef,xX]+$', i))): raise ValueError("Your '" + str(i) + "' argument is incorrectly formatted")
-                    arguments.append(i)
-                else:
-                    arguments.append(i)
-
-
-
-
-
-        print("Command:")        
-        print( commands)
-
-        print("Arguments:")
-        print(arguments)
-        print("\n")
-
-
-
-        #Prints Description of available commands
-        command = "-h" in commands  or   "--help" in commands
-        if( commands[0] == "-h" or  commands[0] == "-help"):
-            print ( "-h --help" )
-            print(
-'''\nCommands:\n
+def print_help():
+    help_text = '''
+Commands:
 
 -h  | --help        # displays available commands.
 -c  | --count       # returns n specified byte_words (i.e. 01 02 03 04), 4 in this example.
--s  | --separate    # returns a separated array of n byte_words when a valid, even, stirng of bytes provided (i.e. 01020304 -> 01 02 03 04).
+-s  | --separate    # returns a separated array of n byte_words when a valid, even, string of bytes provided (i.e. 01020304 -> 01 02 03 04).
 -j  | --join        # joins a space-separated array of given byte_words. (i.e. 01 02 03 04 -> 01020304).
--r  | --repeat      # returns an array of n-lenght of repeated byte_words (i.e AA AA AA AA).
--cl | --clean       # removes comas and prefixes in a string of byte_words (i.e 0x01, 0x02, 0x03 -> 01 02 03).
+-r  | --repeat      # returns an array of n-length of repeated byte_words (i.e AA AA AA AA).
+-cl | --clean       # removes commas and prefixes in a string of byte_words (i.e 0x01, 0x02, 0x03 -> 01 02 03).
+-u  | --upperc      # turns all lower case characters into uppercase of a string
+-l  | --lowerc      # turns all uppercase character into lowercase characters of a string
 
-Flags:\n
+Flags:
 Note: flags are intended to be added as support alongside the commands
 
--upp | -uppercase   # If String is Uppercase you may want to prepend with this flag
--p   | --prefix     # 0x prefix flag (i.e. 01,02,03 -> 0x01,0x02,0x03)
--cs  | --comma      # comma separated flag
--ns  | --no-sep     # no space separated flag
--sp  | --sart-point # starting point flag [Starts at a given number where (starting_point + n < 0xFF ). n = # of byte_words  ]
+-upp | --uppercase   # turns a lower case string into uppercase
+-p   | --prefix      # 0x prefix flag (i.e. 01,02,03 -> 0x01,0x02,0x03)
+-cs  | --comma       # comma separated flag
+-ns  | --no-sep      # no space separated flag
+-sp  | --start-point # starting point flag [Starts at a given number where (starting_point + n < 0xFF ). n = # of byte_words  ]
+                     # -sp example: -c 5 -sp 5 --> 05 06 07 08 09  
+                     # where the -sp argument is an integer so if starting point is to be 0A the -sp value should be 10
+                     
+'''
+    print(help_text)
+
+def handle_count_command(commands, arguments):
+    prefix = "-p" in commands or "--prefix" in commands
+    cs = "-cs" in commands or "--comma" in commands
+    ns = "-ns" in commands or "--no-sep" in commands
+    sp = "-sp" in commands or "--start-point" in commands
+
+    # Check if the number argument is provided and is a valid integer
+    if not arguments or not arguments[0].isdigit():
+        print("A numeric argument is required for the count command.\n\n")
+        return
+
+    number_of_bytes = int(arguments[0])
+    starting_point = 0
+    if sp:
+        # Validate starting point argument
+        if len(arguments) < 2 or not arguments[1].isdigit():
+            print("A numeric starting point is required with the -sp flag.\n\n")
+            return
+
+        starting_point = byteStringToHex(arguments[1]) if bool(re.match('^[ABCDEFabcdef]+$', arguments[1])) else int(arguments[1])
+        if starting_point + number_of_bytes > 0xFF:
+            raise ValueError('Starting point would make the count go beyond 0xFF, which is not permitted\n\n')
+
+    charString = ""
+    for i in range(starting_point, starting_point + number_of_bytes):
+        if prefix:
+            charString += "0x"
+        charString += '{:02X}'.format(i)
+        if cs:
+            charString += ","
+        if not ns:  # Add space if not no-separation flag
+            charString += " "
+
+    # Remove trailing comma and space if present
+    if cs or not ns:
+        charString = charString.rstrip(", ")
+
+    print(charString)
+    print('\n\n')
 
 
-            
-                ''')
-            
 
-        #more than 3 argumens, could either be an argument with a flag or an argument with a space separated string of n bytes
+# def handle_separate_command(commands, arguments):
+#     if not arguments:
+#         raise ValueError("No string provided for separation.")
 
-        #example 2: -m FF AA FF -> FFAAFF
+#     hex_string = arguments[0]
+#     charString = ""
 
+#     # Check if the string contains '0x' prefix
+#     if '0x' in hex_string or '0X' in hex_string:
+#         segments = hex_string.split('0x')[1:]  # Skip the first empty segment
+#         for segment in segments:
+#             if len(segment) >= 2:
+#                 charString += "0x" + segment[:2]
+#                 if len(segment) > 2:
+#                     charString += " 0x" + segment[2:]
+#                 charString += " "
+#             else:
+#                 charString += "0x" + segment + " "
+#     elif ',' in hex_string:
+#         # Process comma-separated string
+#         hex_values = hex_string.split(',')
+#         for val in hex_values:
+#             charString += val if len(val) == 2 else '0' + val
+#             charString += " "
+#     else:
+#         # Process continuous hex string without separators
+#         for i in range(0, len(hex_string), 2):
+#             charString += hex_string[i:i+2] + " "
 
+#     print(charString.strip())
+#     print('\n\n')
 
-        #--------------------------------------------------------------------------------------------------------------------------#
-        #Prints a string of n separated byte-words in hex format with or w/o prefix in a comma separated or space separated fashion
+def handle_separate_command(commands, arguments):
+    prefix = "-p" in commands or "--prefix" in commands
+    cs = "-cs" in commands or "--comma" in commands
+    ns = "-ns" in commands or "--no-sep" in commands
 
-        #Format:    -c 4 -cs -sp 0F
-        # Return:   1F, 2F, 3F, 4F
+    if not arguments:
+        print("No string provided for separation.\n\n")
+        return
 
-        command = "-c"  in commands or "--count"        in commands
-        prefix  = "-p"  in commands or "--prefix"       in commands #checks for prefix flag
-        cs      = "-cs" in commands or "--comma"        in commands #checks for comma separated
-        ns      = "-ns" in commands or "--no-sep"       in commands #checks for no space separation
-        sp      = "-sp" in commands or "--start-point"  in commands #cheks if provided starting point
+    hex_string = arguments[0]
+    separated_string = ""
 
+    if ',' in hex_string:
+        # Process comma-separated string
+        hex_values = hex_string.split(',')
+    else:
+        # Process continuous hex string
+        hex_values = [hex_string[i:i+2] for i in range(0, len(hex_string), 2)]
 
-        if(command):
-            print ( "-c --count:" )
+    for i, value in enumerate(hex_values):
+        value = value.strip()
 
+        # Prepend prefix if required
+        if prefix and not value.lower().startswith("0x"):
+            separated_string += "0x"
 
-            starting_point = 0
-            if(sp):
-                
-                starting_point  = byteStringToHex(arguments[1])  if(bool(re.match('^[ABCDEFabcdef]+$', arguments[1]))) else int(arguments[1])
-                number_of_bytes = int(arguments[0]) -1
-                shifted_value   =  starting_point + number_of_bytes
+        separated_string += value
 
-                if( shifted_value  > 0xFF ): raise ValueError('The Starting point would make the count go beyond 0xFF, which is not permited')
-                countNumber     = shifted_value +1
+        # Add comma or space after each value
+        if i < len(hex_values) - 1:
+            if cs:
+                separated_string += ","
+            if not ns:
+                separated_string += " "
 
-            else:
-                countNumber = int( arguments[0] ) if (int( arguments[0] ) < 257) else 256  #limits to 128 byte-words
+    print(separated_string.strip())
 
-            for i in range( starting_point , countNumber): #Creates the count
-
-                if(prefix): charString += "0x"      #appends prefix if chosen
-                charString += '{:02X}'.format(i)    #prints the count
-                if(cs):  charString += ","          #checks if -cs (comma separated) flag was setup
-                if(not ns): charString += " "       #checks if no separation flag
-            
-            if(cs): charString = charString[:len(charString)-1]
-
-        #--------------------------------------------------------------------------------------------------------------------------#
-
-
-        #--------------------------------------------------------------------------------------------------------------------------#
-        #PENDING COMMENTING
-
-        command = "-s"  in commands or "--separate"  in commands
-        prefix  = "-p"  in commands or "--prefix" in commands #checks for prefix flag
-        cs      = "-cs" in commands or "--comma"  in commands #checks for comma separated
-
-        if(command):
-            print ( "-s --separate:" )
-            strToSep = arguments[0]
-
-            if( not(len(strToSep)%2 ==0) ): raise ValueError('The provided string to be separated is not an even number')
-
-            count = 1
-            for x in strToSep: #Creates the count
-                count = count + 1
-                if(count%2==0):
-                    if(cs):  charString += ","          #checks if -cs (comma separated) flag was setup
-                    charString += " "                   #appends space
-                    if(prefix): charString += "0x"      #appends prefix if chosen
-                    count =0                            #resets count
-                            
-                charString +=x
-                
-
-            
-            #correct added characters
-            charString = charString[ - (len(charString)-2)  :] if(cs) else charString[ - (len(charString)-1)  :] 
-
-        #--------------------------------------------------------------------------------------------------------------------------#
-                
-        #--------------------------------------------------------------------------------------------------------------------------#
-        #PENDING COMMENTING
+    print('\n\n')
 
 
-        command = "-j"  in commands or "--join"   in commands
-        prefix  = "-p"  in commands or "--prefix" in commands #checks for prefix flag
-        cs      = "-cs" in commands or "--comma"  in commands #checks for comma separated
+def handle_join_command(commands, arguments):
+    prefix = "-p" in commands or "--prefix" in commands
+    cs = "-cs" in commands or "--comma" in commands
 
-        if(command):
-            print ( "-j --join:" )
+    joined_string = ""
 
-            for x in arguments:
-                #if( not((len(x)%2) == 0) ): raise ValueError('The provided string to be separated is not an even number')
+    for arg in arguments:
+        hex_bytes = arg.split()
 
-                if(prefix): charString += "0x"      #appends prefix if chosen
-                charString += str(x)
-                if(cs):  charString += ","          #checks if -cs (comma separated) flag was setup
+        for byte in hex_bytes:
+            if prefix:
+                joined_string += "0x"
+            joined_string += byte
+            if cs:
+                joined_string += ","
 
-            if(cs): charString = charString[:len(charString)-1]
+    # Remove the trailing comma if necessary
+    if cs and joined_string.endswith(","):
+        joined_string = joined_string[:-1]
 
-        #--------------------------------------------------------------------------------------------------------------------------#
+    print(joined_string)
+    print('\n\n')
 
-        #--------------------------------------------------------------------------------------------------------------------------#
-        #Format:    -r 4 AA
-        # Return:   AA AA AA AA   
+def handle_repeat_command(commands, arguments):
+    prefix = "-p" in commands or "--prefix" in commands
+    cs = "-cs" in commands or "--comma" in commands
+    ns = "-ns" in commands or "--no-sep" in commands
 
+    if len(arguments) < 2:
+        print("The repeat command requires two arguments: the number of repetitions and the byte word.\n\n")
+        return
 
-        command = "-r"  in commands or "--repeat" in commands
-        prefix  = "-p"  in commands or "--prefix"   in commands #checks for prefix flag
-        cs      = "-cs" in commands or "--comma"    in commands #checks for comma separated
-        ns      = "-ns" in commands or "--no-sep"   in commands #checks for no space separation
+    try:
+        repeat_count = int(arguments[0])
+    except ValueError:
+        print("The first argument for the repeat command must be a valid integer.\n\n")
+        return
 
-        if(command):
-            print ( "-r --repeat:" )
-            
-            countNumber = int( arguments[0] ) if (int( arguments[0] ) < 257) else 256 #limits to 128 byte-words
+    byte_word = arguments[1]
 
-            for x in range(int(arguments[0])):
+    # Check if the byte word already contains the '0x' prefix
+    already_has_prefix = byte_word.startswith("0x") or byte_word.startswith("0X")
 
-                if(prefix): charString += "0x"      #appends prefix if chosen
-                charString += arguments[1]
-                if(cs):  charString += ","          #checks if -cs (comma separated) flag was setup
-                if(not ns): charString += " "       #checks if no separation flag
-                
+    repeated_string = ""
+    for _ in range(repeat_count):
+        if prefix and not already_has_prefix:
+            repeated_string += "0x"
+        repeated_string += byte_word
+        if cs:
+            repeated_string += ","
+        if not ns:
+            repeated_string += " "
 
-            if(cs): charString = charString[:len(charString)-1]
+    # Remove trailing comma and space if present
+    if cs or not ns:
+        repeated_string = repeated_string.rstrip(", ")
 
+    print(repeated_string)
+    print('\n\n')
 
-        #--------------------------------------------------------------------------------------------------------------------------#
+def handle_clean_command(commands, arguments):
+    if not arguments:
+        print("No string provided for cleaning.")
+        return
 
-        command = "-cl"    in commands or "--clean"            in commands
-        prefix  = "-p"      in commands or "--prefix"           in commands #checks for prefix flag
-        ns      = "-ns"     in commands or "--no-sep"           in commands #checks for no space separation
+    # Combine the arguments into a single string
+    combined_args = " ".join(arguments)
 
-        if(command):
-            print ( "-c --clean:" )
+    # Remove commas, '0x', and '0X' prefixes
+    cleaned_string = combined_args.replace(",", "").replace("0x", "").replace("0X", "")
 
-            for x in arguments:
-                x = x.replace(",","")
-                x = x.replace("0x","") if ns else x.replace("0x"," ")
-                charString += x
+    print(cleaned_string)
 
+    print('\n\n')
 
-        #--------------------------------------------------------------------------------------------------------------------------#
+def handle_uppercase_command(commands, arguments):
+    # Implement uppercase functionality
+    print("Uppercase command not implemented yet.")
 
+def main():
+    argLen = len(sys.argv) - 1
+    argList = sys.argv[1:]
 
-        command = "-upp" in commands     or      "--uppercase" in commands
+    print('\nNumber of arguments:', argLen, 'arguments.')
+    print('Argument List:', argList)
+    print('\n')
 
-
-        if(command):
-            print ( "-upp --uppercase:\n" )
-
-            for x in arguments:
-                charString += x.upper() + " "
-
-
-        #--------------------------------------------------------------------------------------------------------------------------#
-
-
-        #features to add: 
-        #Read from file (convert from file)
-        #add leading 0's when singe character provided
-        #convert decimal to hex
-        #chek if array is already -s    
-        #generate random
-        #backwards count on -c 
-        #separate by any character given
-        #if separated by any chars
-        #start count from any given number as long as start + n < 0xFF
-    
-        try:
-
-            #correct any possible added characters
-            if(charString):
-                if( charString[len(charString)-1]== " " or charString[len(charString)-1]== "," ): charString = charString[:len(charString)-1]
-                print(charString)
-                
-            print("\n")
-
-        except:
-            print("\n")
-            sys.exit()
-
-
-    except Exception as e:
-        print("\n\nError:")
-        print(e)
-        print("Please check your arguments.")
-        print("\n")
+    if not argList:
+        print("No arguments provided. Use -h or --help for usage information.")
         sys.exit()
 
+    # Process commands
+    commands = [arg for arg in argList if arg.startswith("-")]
+    arguments = [arg for arg in argList if not arg.startswith("-")]
+
+    if "-h" in commands or "--help" in commands:
+        print_help()
+
+        
+    elif "-c" in commands or "--count" in commands:
+        handle_count_command(commands, arguments)
+        
+
+    elif "-s" in commands or "--separate" in commands:
+        # if arguments:
+        #     argument = arguments[0]
+        #     # Apply formatting only if the string contains commas and no '0x' or '0X'
+        #     if ',' in argument and all(prefix not in argument for prefix in ['0x', '0X']):
+        #         argument = format_hex_string(argument)
+        #     handle_separate_command(commands, [argument])
+        # else:
+        #     print("No string provided for separation.\n\n")
+        if len(arguments) != 1 or any(arg.startswith('0x') for arg in arguments):
+            print("Please encapsulate the entire hex string in quotes. For example: \"0x00,0x01,0x02,0x03\"\n\n")
+        else:
+            handle_separate_command(commands, arguments)
+
+    elif "-j" in commands or "--join" in commands:
+        handle_join_command(commands, arguments)
+    
+    elif "-r" in commands or "--repeat" in commands:
+        handle_repeat_command(commands, arguments)
+    elif "-cl" in commands or "--clean" in commands:
+        handle_clean_command(commands, arguments)
+
+
+    # Add other command handlers here
 
 
 
-# Using the special variable 
-# __name__
-if __name__=="__main__":
-    main()   
+if __name__ == "__main__":
+    main()
