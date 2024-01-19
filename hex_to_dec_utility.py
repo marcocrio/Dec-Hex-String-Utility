@@ -146,7 +146,9 @@ def handle_separate_command(commands, arguments):
     if ',' in hex_string:
         hex_values = hex_string.split(',')
         if prefix:
-            hex_values = ['0x' + val for val in hex_values]  # Add '0x' prefix
+            # Add '0x' prefix only if it's not already present
+            hex_values = ['0x' + val.strip() if not val.strip().lower().startswith('0x') else val.strip() for val in hex_values]
+
 
     elif '0x' in hex_string.lower() or '0X' in hex_string:
         # If string already contains prefixed byte words
@@ -278,7 +280,7 @@ def main():
         
 
     elif "-s" in commands or "--separate" in commands:
-        print("\nNote: This command requires to encapsulate your string in quotations marks\n")
+        print("\nNote: This command requires to encapsulate your string in quotations marks: \"0x00,0x01,0x02\"... \n")
         handle_separate_command(commands, arguments)
         
     
