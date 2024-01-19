@@ -85,10 +85,11 @@ def main():
 Flags:\n
 Note: flags are intended to be added as support alongside the commands
 
--p  | --prefix      # 0x prefix flag (i.e. 01,02,03 -> 0x01,0x02,0x03)
--cs | --comma       # comma separated flag
--ns | --no-sep      # no space separated flag
--sp | --sart-point  # starting point flag [Starts at a given number where (starting_point + n < 0xFF ). n = # of byte_words  ]
+-upp | -uppercase   # If String is Uppercase you may want to prepend with this flag
+-p   | --prefix     # 0x prefix flag (i.e. 01,02,03 -> 0x01,0x02,0x03)
+-cs  | --comma      # comma separated flag
+-ns  | --no-sep     # no space separated flag
+-sp  | --sart-point # starting point flag [Starts at a given number where (starting_point + n < 0xFF ). n = # of byte_words  ]
 
 
             
