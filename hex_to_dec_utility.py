@@ -3,6 +3,8 @@
 import sys
 import re
 
+print_cancel = False
+
 def byteStringToHex(hexString) -> int:
     hexLetters = { 
         "A": 10, "B": 11, "C": 12, "D": 13, "E": 14, "F": 15,
@@ -42,6 +44,9 @@ Commands:
 -j  | --join        # joins a space-separated array of given byte_words. (i.e. 01 02 03 04 -> 01020304).
 -r  | --repeat      # returns an array of n-length of repeated byte_words (i.e AA AA AA AA).
 -cl | --clean       # removes commas and prefixes in a string of byte_words (i.e 0x01, 0x02, 0x03 -> 01 02 03).
+-re | --rendi       # reverses the endianess of a string of byte word characters 
+
+Not impemented yet:
 -u  | --upperc      # turns all lower case characters into uppercase of a string
 -l  | --lowerc      # turns all uppercase character into lowercase characters of a string
 
@@ -203,53 +208,10 @@ def handle_repeat_command(commands, arguments):
     print(repeated_string)
     print('\n\n')
 
-# def handle_clean_command(commands, arguments):
-#     ns = "-ns" in commands or "--no-sep" in commands
-#     prefix = "-p" in commands or "--prefix" in commands
-#     cs = "-cs" in commands or "--comma" in commands
-
-#     if not arguments:
-#         print("No string provided for cleaning.\n\n")
-#         return
-
-#     hex_string = arguments[0]
-
-#     # Remove '0x' or '0X' prefixes if the -p flag is not set
-#     if not prefix: 
-#         hex_string = hex_string.replace('0x', '').replace('0X', '')
-    
-#     # Insert space after every second character following "0x" or "0X"
-#     if prefix:
-#         hex_string = re.sub(r'(0x[0-9A-Fa-f]{2}|0X[0-9A-Fa-f]{2})', r'\1 ', hex_string)
-#         hex_string = hex_string.strip()
-
-
-#      # Remove commas if the -cs flag is not set, or add spaces if -ns is not set
-#     if not cs:
-#         if ns:
-#             hex_string = hex_string.replace(',', '')
-#         else:
-#             if not prefix:
-#                 hex_string = hex_string.replace(',', ' ')
-#             else:
-#                 hex_string = hex_string.replace(',', '')
-
-#     else:
-#         if ',' not in hex_string:
-#             # Match two hex characters or '0x' followed by two hex characters
-#             hex_string = re.sub(r'(0x[0-9A-Fa-f]{2}|[0-9A-Fa-f]{2})', r'\1, ', hex_string)[:-2]  # Remove trailing comma
-
-
-
-
-
-    
-#     print(hex_string)
-#     print('\n\n')
-
 def handle_clean_command(commands, arguments):
     if not arguments:
-        print("No string provided for cleaning.\n\n")
+        if not print_cancel:
+            print("No string provided for cleaning.\n\n")
         return
 
     prefix = "-p" in commands or "--prefix" in commands
@@ -276,16 +238,42 @@ def handle_clean_command(commands, arguments):
         # Remove all spaces if -ns flag is set
         cleaned_string = cleaned_string.replace(' ', '')
 
-    print(cleaned_string)
-    print('\n\n')
-
-
-
-
+    if not print_cancel:
+        print(cleaned_string)
+        print('\n\n')
 
 def handle_uppercase_command(commands, arguments):
     # Implement uppercase functionality
     print("Uppercase command not implemented yet.")
+
+def handle_reverse_endianess_command(commands, arguments):
+    if not arguments:
+        print("No string provided for endianess reversal.\n\n")
+        return
+
+    hex_string = arguments[0]
+
+    # Determine if the string is using '0x' or '0X' prefixes
+    if '0x' in hex_string.lower():
+        # Handle '0x' prefixed byte words
+        byte_words = re.findall(r'0x[0-9A-Fa-f]{2}', hex_string)
+    else:
+        # Handle non-prefixed byte words
+        # Remove commas and spaces, then split into byte words
+        cleaned_string = hex_string.replace(',', '').replace(' ', '')
+        byte_words = [cleaned_string[i:i+2] for i in range(0, len(cleaned_string), 2)]
+
+    # Reverse the order of byte words
+    reversed_string = ' '.join(byte_words[::-1])
+
+    # global print_cancel
+    # print_cancel = True
+    handle_clean_command(commands, [reversed_string])
+    # print_cancel = False
+
+    # print(reversed_string)
+    print('\n\n')
+
 
 def main():
     argLen = len(sys.argv) - 1
@@ -315,8 +303,7 @@ def main():
         print("\nNote: This command requires to encapsulate your string in quotations marks: \"0x00,0x01,0x02\"... \n")
         handle_separate_command(commands, arguments)
         
-    
-
+        
     elif "-j" in commands or "--join" in commands:
         handle_join_command(commands, arguments)
     
@@ -324,9 +311,12 @@ def main():
         handle_repeat_command(commands, arguments)
     elif "-cl" in commands or "--clean" in commands:
         print("\nNote: This command requires to encapsulate your string in quotations marks: \"0x00,0x01,0x02\"... \n")
-
         handle_clean_command(commands, arguments)
 
+
+    elif "-re" in commands or "--rendi" in commands:
+        print("\nNote: This command requires to encapsulate your string in quotations marks: \"0x00,0x01,0x02\"... \n")
+        handle_reverse_endianess_command(commands, arguments)
 
     # Add other command handlers here
 
